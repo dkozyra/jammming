@@ -1,7 +1,8 @@
 let accessToken;
 let expires;
 let clientId = 'ff075deed9584b37bad2f720511c45de';
-let redirectURI = 'http://uneven-geese.surge.sh';
+// let redirectURI = 'http://uneven-geese.surge.sh';
+let redirectURI = 'http://localhost:3000/';
 
 const Spotify = {
 
@@ -26,25 +27,25 @@ const Spotify = {
         }
     },
 
-    search(term) {
+    async search(term) {
         let accessToken = Spotify.getAccessToken();
-        return fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`, {
-            headers: {Authorization: `Bearer ${accessToken}`}
-        }).then(response => response.json()).then(jsonresponse => {
-            if(!jsonresponse.tracks) {
-                return [];
-            }
-            return jsonresponse.tracks.items.map(track => ({
-                id: track.id,
-                name: track.name,
-                artist: track.artists[0].name,
-                album: track.album.name,
-                uri: track.uri
-            }))
-        })
+        const response = await fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const jsonresponse = await response.json();
+        if (!jsonresponse.tracks) {
+            return [];
+        }
+        return jsonresponse.tracks.items.map(track => ({
+            id: track.id,
+            name: track.name,
+            artist: track.artists[0].name,
+            album: track.album.name,
+            uri: track.uri
+        }));
     },
 
-    savePlaylist(name, trackUris) {
+    async savePlaylist(name, trackUris) {
         if(!name || !trackUris.length) {
             return;
         }
@@ -53,26 +54,24 @@ const Spotify = {
         let headers = {Authorization: `Bearer ${accessToken}`};
         let userId;
 
-        return fetch('https://api.spotify.com/v1/me', {headers: headers}
-        ).then(response => response.json()
-        ).then(jsonresponse => {
-            userId = jsonresponse.id;
-            return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
+        const response = await fetch('https://api.spotify.com/v1/me', { headers: headers }
+        );
+        const jsonresponse = await response.json();
+        userId = jsonresponse.id;
+        const response_1 = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
             {
                 headers: headers,
                 method: 'POST',
-                body: JSON.stringify({name: name})
-            }).then(response => response.json()
-            ).then(jsonresponse => {
-                const playlistId = jsonresponse.id;
-                return fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistId}/tracks`,
-                {
-                    headers: headers,
-                    method: 'POST',
-                    body: JSON.stringify({uris: trackUris})
-                })
-            })
-        })
+                body: JSON.stringify({ name: name })
+            });
+        const jsonresponse_1 = await response_1.json();
+        const playlistId = jsonresponse_1.id;
+        return await fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistId}/tracks`,
+            {
+                headers: headers,
+                method: 'POST',
+                body: JSON.stringify({ uris: trackUris })
+            });
     }
 };
 
